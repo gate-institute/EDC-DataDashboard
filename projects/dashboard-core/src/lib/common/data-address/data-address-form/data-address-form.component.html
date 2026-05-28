@@ -29,12 +29,12 @@
     </select>
   </label>
 
-  <legend class="fieldset-label">Base URL</legend>
-  <label class="input w-full" [ngClass]="dataplaneMetadataForm.get('baseUrl')?.invalid ? 'input-error' : ''">
+  <legend class="fieldset-label">URL</legend>
+  <label class="input w-full" [ngClass]="dataplaneMetadataForm.get('url')?.invalid ? 'input-error' : ''">
     <span class="material-symbols-rounded opacity-50">link</span>
-    <input type="url" placeholder="Base Url" name="baseUrl" formControlName="baseUrl" />
+    <input type="url" placeholder="URL" name="url" formControlName="url" />
   </label>
-  @if (dataplaneMetadataForm.get('baseUrl')?.invalid) {
+  @if (dataplaneMetadataForm.get('url')?.invalid) {
     <p class="fieldset-label text-error">Enter a valid URL</p>
   }
 

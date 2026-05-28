@@ -40,17 +40,19 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
     this.dataplaneMetadataForm = this.formBuilder.group({
       type: ['HttpData', Validators.required],
       method: ['GET'],
-      baseUrl: ['', [Validators.required, Validators.pattern(URL_REGEX)]],
+      url: ['', [Validators.required, Validators.pattern(URL_REGEX)]],
       ttl: [600],
       username: [''],
       password: [''],
     });
 
     this.dataplaneMetadataForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
+      if (!value.url) return;
+
       const dataAddress = {
         type: value.type || 'HttpData',
         method: value.method || 'GET',
-        baseUrl: value.baseUrl,
+        url: value.url,
       } as DataAddress;
       this.dataAddressChange.emit(dataAddress);
     });

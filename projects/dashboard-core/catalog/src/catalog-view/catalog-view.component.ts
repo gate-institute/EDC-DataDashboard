@@ -115,9 +115,6 @@ export class CatalogViewComponent implements OnInit, OnDestroy {
     }
     if (catalogRequest.counterPartyAddress) {
       return await this.getCatalogByAddress(catalogRequest);
-    // } else if (!catalogRequest.counterPartyAddress && this.isFederatedCatalogEnabled) {
-    //   return await this.getFederatedCatalogs();
-    // }
     }
   }
 
