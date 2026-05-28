@@ -49,10 +49,6 @@ export class CatalogService {
    * @returns A promise that resolves to an array of catalog.
    */
   private async getCatalog(catalogRequest: CatalogRequest): Promise<Catalog> {
-    // const catalog = await firstValueFrom(
-    //   this.http.post<any>(await this.managementEndpoint('/v4/catalog/request'), catalogRequest, await this.options()),
-    // );
-    // return this.toCatalogEntity(catalog);
     return (await this.edc.getClient()).management.catalog.request(catalogRequest);
   }
 
@@ -88,12 +84,6 @@ export class CatalogService {
    * @return {Promise<ContractNegotiationState>} A promise resolving to the current state of the contract negotiation.
    */
   public async getNegotiationState(id: string): Promise<ContractNegotiationState> {
-    // return firstValueFrom(
-    //   this.http.get<ContractNegotiationState>(
-    //     await this.managementEndpoint(`/v4/contractnegotiations/${encodeURIComponent(id)}/state`),
-    //     await this.options(),
-    //   ),
-    // );
     return (await this.edc.getClient()).management.contractNegotiations.getState(id);
   }
 
@@ -249,9 +239,6 @@ export class CatalogService {
    * @param defaultValue - A default value to return in case of participantId is undefined
    * @returns the participant id. If undefined then returns the default value
    */
-  // private getCatalogParticipantId(catalog: Catalog, defaultValue: string): string {
-  //   return catalog?.['https://w3id.org/dspace/2025/1/participantId']?.[0]?.['@id'] ?? defaultValue;
-  // }
   private getCatalogParticipantId(catalog: Catalog, defaultValue: string): string {
     return (
       catalog?.['https://w3id.org/dspace/2025/1/participantId']?.['@id'] ??

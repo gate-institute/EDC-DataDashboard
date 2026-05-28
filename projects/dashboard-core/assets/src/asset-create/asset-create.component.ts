@@ -29,7 +29,7 @@ import { JsonValue } from '@angular-devkit/core';
 type DataplaneMetadataFormValue = {
   type?: string;
   method?: string;
-  baseUrl?: string;
+  url: string;
   ttl?: number | string;
   username?: string;
   password?: string;
@@ -97,10 +97,10 @@ export class AssetCreateComponent implements OnChanges {
           dataplaneMetadata: {
             type: dpm['type'] || 'HttpData',
             method: dpm['method'] || 'GET',
-            baseUrl: dpm['baseUrl'] || dpm['url'] || '',
+            url: dpm['url'] || '',
             ttl: dpm['ttl'] || 600,
-            username: dpm['auth.username'] || dpm['auth']?.['username'] || '',
-            password: dpm['auth.password'] || dpm['auth']?.['password'] || '',
+            username: dpm['auth.username'] || '',
+            password: dpm['auth.password'] || '',
           },
         });
       }
@@ -132,11 +132,7 @@ export class AssetCreateComponent implements OnChanges {
 
   private propertyValue(key: string): JsonValue | undefined {
     const properties = this.properties as any;
-    const raw =
-      properties[key] ??
-      properties[`edc:${key}`] ??
-      properties[`asset:prop:${key}`] ??
-      properties[`https://w3id.org/edc/v0.0.1/ns/${key}`];
+    const raw = properties[key];
 
     if (Array.isArray(raw) && raw.length === 1) {
       return raw[0]?.['@value'] ?? raw[0]?.['@id'] ?? raw[0];
@@ -180,7 +176,11 @@ export class AssetCreateComponent implements OnChanges {
   }
 
   private createDataplaneMetadataProperties(dpm?: DataplaneMetadataFormValue): Record<string, JsonValue> {
-    const url = String(dpm?.baseUrl ?? '').trim();
+    if (!dpm?.url) {
+      throw new Error('url is required');
+    }
+
+    const url = dpm.url.trim();
     const properties: Record<string, JsonValue> = {
       type: dpm?.type || 'HttpData',
       method: dpm?.method || 'GET',
@@ -188,7 +188,7 @@ export class AssetCreateComponent implements OnChanges {
       ttl: Number(dpm?.ttl ?? 600),
     };
 
-    if (dpm?.username && dpm.password) {
+    if (dpm?.username && dpm?.password) {
       properties['auth.type'] = 'basic';
       properties['auth.username'] = dpm.username;
       properties['auth.password'] = dpm.password;

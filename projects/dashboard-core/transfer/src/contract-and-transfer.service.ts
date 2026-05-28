@@ -144,29 +144,6 @@ export class ContractAndTransferService {
     }
   }
 
-  // /**
-  //  * Downloads a dataset based on the provided transfer ID.
-  //  *
-  //  * @param {string} transferId - The unique identifier for the dataset transfer.
-  //  * @return {Promise<Observable<HttpEvent<Blob>>>} - A promise resolving to an Observable that emits HttpEvent objects
-  //  *   for the Blob being downloaded, with progress tracking capabilities.
-  //  * @throws {Error} - Throws an error if no EDR (Endpoint Data Reference) is found for the provided transfer ID.
-  //  */
-  // public async downloadDataset(transferId: string): Promise<Observable<HttpEvent<Blob>>> {
-  //   const edr = await (await this.edc.getClient()).management.edrs.dataAddress(transferId);
-  //   if (!edr) {
-  //     throw new Error('No EDR found for transfer ID ' + transferId);
-  //   }
-  //   return this.http.get(edr.mandatoryValue<string>('edc', 'endpoint'), {
-  //     headers: {
-  //       Authorization: edr.mandatoryValue<string>('edc', 'authorization'),
-  //     },
-  //     responseType: 'blob',
-  //     reportProgress: true,
-  //     observe: 'events',
-  //   });
-  // }
-
   /**
     * Downloads a dataset through Gateplane using the transfer ID.
     */
