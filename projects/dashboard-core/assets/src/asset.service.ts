@@ -13,8 +13,10 @@
  */
 
 import { Injectable, inject } from '@angular/core';
-import { EdcClientService } from '@eclipse-edc/dashboard-core';
+import { DashboardStateService, EdcClientService } from '@eclipse-edc/dashboard-core';
 import { Asset, AssetInput, IdResponse } from '@think-it-labs/edc-connector-client';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 /**
  * Service to manage and retrieve assets.
@@ -23,6 +25,8 @@ import { Asset, AssetInput, IdResponse } from '@think-it-labs/edc-connector-clie
   providedIn: 'root',
 })
 export class AssetService {
+  private readonly http = inject(HttpClient);
+  private readonly stateService = inject(DashboardStateService);
   private readonly edc = inject(EdcClientService);
 
   /**
@@ -30,33 +34,39 @@ export class AssetService {
    * @returns A promise that resolves to an array of assets.
    */
   public async getAllAssets(): Promise<Asset[]> {
-    return (await this.edc.getClient()).management.assets.queryAll();
+    const client = await this.edc.getClient();
+    return client.management.assets.queryAll();
   }
 
-  /**
-   * Creates a new asset using the provided asset input.
-   * @param assetInput - The input data required to create a new asset.
-   * @returns A promise that resolves to the ID response of the created asset.
-   */
   public async createAsset(assetInput: AssetInput): Promise<IdResponse> {
-    return (await this.edc.getClient()).management.assets.create(assetInput);
+  //  return (await this.edc.getClient()).management.assets.create(assetInput);
+    const { url, options } = await this.assetEndpoint();
+    return firstValueFrom(this.http.post<IdResponse>(url, assetInput, options));
   }
-
-  /**
-   * Updates an existing asset with the provided asset input.
-   * @param assetInput - The input data required to update the asset.
-   * @returns A promise that resolves when the asset is successfully updated.
-   */
+ 
   public async updateAsset(assetInput: AssetInput): Promise<void> {
-    return (await this.edc.getClient()).management.assets.update(assetInput);
+    //return (await this.edc.getClient()).management.assets.update(assetInput);
+    const { url, options } = await this.assetEndpoint();
+    return (await firstValueFrom(this.http.put<void>(url, assetInput, options)));
   }
-
-  /**
-   * Deletes an asset based on the provided ID.
-   * @param id - The unique identifier of the asset to be deleted.
-   * @returns A promise that resolves when the asset is successfully deleted.
-   */
+  
   public async deleteAsset(id: string): Promise<void> {
     return (await this.edc.getClient()).management.assets.delete(id);
+  
   }
+
+  private async assetEndpoint() {
+    const config = await firstValueFrom(this.stateService.currentEdcConfig$);
+    if (!config) {
+      throw new Error('No EDC configuration available.');
+    }
+
+    return {
+      url: `${config.managementUrl}/v4/assets`,
+      options: {
+        headers: config.apiToken ? { 'x-api-key': config.apiToken } : undefined,
+      },
+    };
+  }
+
 }

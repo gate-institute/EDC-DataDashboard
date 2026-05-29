@@ -110,10 +110,11 @@ export class CatalogViewComponent implements OnInit, OnDestroy {
   }
 
   async getCatalog(catalogRequest: CatalogRequest) {
+    if (this.isFederatedCatalogEnabled) {
+      return await this.getFederatedCatalogs();
+    }
     if (catalogRequest.counterPartyAddress) {
       return await this.getCatalogByAddress(catalogRequest);
-    } else if (!catalogRequest.counterPartyAddress && this.isFederatedCatalogEnabled) {
-      return await this.getFederatedCatalogs();
     }
   }
 
