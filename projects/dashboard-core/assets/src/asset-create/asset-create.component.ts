@@ -19,21 +19,13 @@ import { AssetService } from '../asset.service';
 import {
   AlertComponent,
   DataAddressFormComponent,
+  DataplaneMetadataFormValue,
   DataTypeInputComponent,
   JsonObjectInputComponent,
   JsonObjectTableComponent,
 } from '@eclipse-edc/dashboard-core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { JsonValue } from '@angular-devkit/core';
-
-type DataplaneMetadataFormValue = {
-  type?: string;
-  method?: string;
-  url: string;
-  ttl?: number | string;
-  username?: string;
-  password?: string;
-};
 
 @Component({
   selector: 'lib-asset-create',
@@ -63,6 +55,7 @@ export class AssetCreateComponent implements OnChanges {
 
   properties: Record<string, JsonValue> = {};
   privateProperties: Record<string, JsonValue> = {};
+  dataplaneMetadata?: DataplaneMetadataFormValue;
 
   assetForm: FormGroup;
 
@@ -70,6 +63,7 @@ export class AssetCreateComponent implements OnChanges {
     this.assetForm = this.formBuilder.group({
       id: [''],
       name: [''],
+      description: [''],
       contenttype: [''],
     });
   }
@@ -86,25 +80,23 @@ export class AssetCreateComponent implements OnChanges {
     this.properties = await compact(this.asset!.properties);
     this.privateProperties = await compact(this.asset!.privateProperties);
     this.assetForm.get('id')?.setValue(this.asset!.id);
-    this.assetForm.get('name')?.setValue(this.propertyValue('name'));
-    this.assetForm.get('contenttype')?.setValue(this.propertyValue('contenttype'));
+    this.assetForm.get('name')?.setValue(this.properties['name']);
+    this.assetForm.get('description')?.setValue(this.properties['description']);
+    this.assetForm.get('contenttype')?.setValue(this.properties['contenttype']);
 
-    setTimeout(async () => {
-      const dpm = await this.compactDataplaneMetadata();
-
-      if (dpm) {
-        this.assetForm.patchValue({
-          dataplaneMetadata: {
-            type: dpm['type'] || 'HttpData',
-            method: dpm['method'] || 'GET',
-            url: dpm['url'] || '',
-            ttl: dpm['ttl'] || 600,
-            username: dpm['auth.username'] || '',
-            password: dpm['auth.password'] || '',
-          },
-        });
-      }
-    });
+    const dpm = await this.compactDataplaneMetadata();
+    if (dpm) {
+      this.dataplaneMetadata = {
+        type: dpm['type'] || 'HttpData',
+        method: dpm['method'] || 'GET',
+        url: dpm['url'],
+        ttl: dpm['ttl'] || 600,
+        authType: this.authType(dpm),
+        username: dpm['auth.username'] || '',
+        password: dpm['auth.password'] || '',
+        apiKey: dpm['header:X-API-Key'] || '',
+      };
+    }
   }
 
   createAsset(): void {
@@ -128,17 +120,6 @@ export class AssetCreateComponent implements OnChanges {
     } else {
       console.error('Create asset called with invalid form');
     }
-  }
-
-  private propertyValue(key: string): JsonValue | undefined {
-    const properties = this.properties as any;
-    const raw = properties[key];
-
-    if (Array.isArray(raw) && raw.length === 1) {
-      return raw[0]?.['@value'] ?? raw[0]?.['@id'] ?? raw[0];
-    }
-
-    return raw?.['@value'] ?? raw?.['@id'] ?? raw;
   }
 
   private createAssetInput(): any {
@@ -168,6 +149,9 @@ export class AssetCreateComponent implements OnChanges {
     if (formValue.name) {
       asset.properties['name'] = formValue.name;
     }
+    if (formValue.description) {
+      asset.properties['description'] = formValue.description;
+    }
     if (formValue.contenttype) {
       asset.properties['contenttype'] = formValue.contenttype;
     }
@@ -188,23 +172,42 @@ export class AssetCreateComponent implements OnChanges {
       ttl: Number(dpm?.ttl ?? 600),
     };
 
-    if (dpm?.username && dpm?.password) {
+    if (dpm?.authType === 'basic') {
       properties['auth.type'] = 'basic';
-      properties['auth.username'] = dpm.username;
-      properties['auth.password'] = dpm.password;
+      properties['auth.username'] = dpm.username!;
+      properties['auth.password'] = dpm.password!;
+    } else if (dpm?.authType === 'apiKey') {
+      properties['header:X-API-Key'] = dpm.apiKey!;
     }
 
     return properties;
   }
 
-  private async compactDataplaneMetadata(): Promise<any | undefined> {
-    const raw = (this.asset as any)?.dataplaneMetadata ?? (this.properties as any)?.dataplaneMetadata;
-    if (!raw) {
+  private async compactDataplaneMetadata(): Promise<Record<string, any> | undefined> {
+    if (!this.asset) {
       return undefined;
     }
 
-    const compacted = await compact(raw);
-    return compacted?.properties?.['@value'] ?? compacted?.properties ?? raw?.properties?.['@value'] ?? raw?.properties;
+    const compacted = await compact(this.asset);
+    const dpm = compacted.dataplaneMetadata;
+
+    if (!dpm) {
+      return undefined;
+    }
+
+    return dpm.properties?.['@value'];
+  }
+
+  private authType(metadata: Record<string, any>): 'none' | 'basic' | 'apiKey' {
+    if (metadata['auth.type'] === 'basic') {
+      return 'basic';
+    }
+
+    if (metadata['header:X-API-Key']) {
+      return 'apiKey';
+    }
+
+    return 'none';
   }
 
 }

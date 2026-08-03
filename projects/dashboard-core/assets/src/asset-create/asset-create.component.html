@@ -39,6 +39,12 @@
         <input type="text" class="grow" placeholder="Name" formControlName="name" />
         <span class="badge badge-info">Optional</span>
       </label>
+      <legend class="fieldset-label">Description</legend>
+      <label class="input flex items-center tooltip tooltip-info tooltip-top w-full" data-tip="A short description of this asset">
+        <span class="material-symbols-rounded opacity-50">description</span>
+        <input type="text" class="grow" placeholder="Description" formControlName="description" name="description" />
+        <span class="badge badge-info">Optional</span>
+      </label>
       <legend class="fieldset-label">Content-Type</legend>
       <label
         class="input flex items-center tooltip tooltip-info tooltip-top w-full"
@@ -54,6 +60,7 @@
       <legend class="fieldset-legend text-sm">Dataplane Metadata</legend>
       <lib-data-address-form
         [parentForm]="assetForm"
+        [initialValue]="dataplaneMetadata"
       ></lib-data-address-form>
     </fieldset>
   </div>
@@ -63,7 +70,7 @@
       <legend class="fieldset-legend text-sm">Properties</legend>
       <lib-json-object-input
         [object]="properties"
-        [excludeKeys]="['@context', 'id', 'name', 'contenttype']"
+        [excludeKeys]="['@context', 'id', 'name', 'description', 'contenttype']"
         (objectChange)="properties = $event"
       >
       </lib-json-object-input>

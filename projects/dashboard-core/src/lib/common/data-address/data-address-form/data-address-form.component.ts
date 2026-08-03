@@ -19,6 +19,17 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { DataAddress } from '@think-it-labs/edc-connector-client';
 import { URL_REGEX } from '../../../models/constants';
 
+export type DataplaneMetadataFormValue = {
+  type?: string;
+  method?: string;
+  url?: string;
+  ttl?: number | string;
+  authType?: 'none' | 'basic' | 'apiKey';
+  username?: string;
+  password?: string;
+  apiKey?: string;
+};
+
 @Component({
   selector: 'lib-data-address-form',
   templateUrl: './data-address-form.component.html',
@@ -31,10 +42,14 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
 
   @Input() showDivider = true;
   @Input() parentForm?: FormGroup;
+  @Input() initialValue?: DataplaneMetadataFormValue;
   @Output() dataAddressChange = new EventEmitter<DataAddress>();
 
   private readonly FORM_GROUP_NAME = 'dataplaneMetadata';
   dataplaneMetadataForm: FormGroup;
+
+  showPassword = false;
+  showApiKey = false;
 
   constructor() {
     this.dataplaneMetadataForm = this.formBuilder.group({
@@ -42,9 +57,20 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
       method: ['GET'],
       url: ['', [Validators.required, Validators.pattern(URL_REGEX)]],
       ttl: [600],
+      authType: ['none'],
       username: [''],
       password: [''],
+      apiKey: [''],
     });
+
+    this.dataplaneMetadataForm
+      .get('authType')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(authType => {
+        this.showPassword = false;
+        this.showApiKey = false;
+        this.updateAuthValidators(authType);
+      });
 
     this.dataplaneMetadataForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
       if (!value.url) return;
@@ -60,6 +86,22 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
 
   ngOnChanges() {
     this.parentForm?.setControl(this.FORM_GROUP_NAME, this.dataplaneMetadataForm);
+    if (this.initialValue) {
+      this.dataplaneMetadataForm.patchValue(this.initialValue);
+    }
+  }
+
+  private updateAuthValidators(authType: string): void {
+    const username = this.dataplaneMetadataForm.get('username');
+    const password = this.dataplaneMetadataForm.get('password');
+    const apiKey = this.dataplaneMetadataForm.get('apiKey');
+
+    username?.setValidators(authType === 'basic' ? [Validators.required] : []);
+    password?.setValidators(authType === 'basic' ? [Validators.required] : []);
+    apiKey?.setValidators(authType === 'apiKey' ? [Validators.required] : []);
+    username?.updateValueAndValidity({ emitEvent: false });
+    password?.updateValueAndValidity({ emitEvent: false });
+    apiKey?.updateValueAndValidity({ emitEvent: false });
   }
 
   ngOnDestroy() {
