@@ -86,6 +86,13 @@ export class AssetCreateComponent implements OnChanges {
 
     const dpm = await this.compactDataplaneMetadata();
     if (dpm) {
+      const customHeaders = Object.entries(dpm)
+        .filter(([key]) => key.startsWith('header:') && key !== 'header:X-API-Key')
+        .map(([key, value]) =>
+          `"${key.substring('header:'.length)}": "${String(value)}"`
+        )
+        .join(',\n');
+
       this.dataplaneMetadata = {
         type: dpm['type'] || 'HttpData',
         method: dpm['method'] || 'GET',
@@ -95,6 +102,7 @@ export class AssetCreateComponent implements OnChanges {
         username: dpm['auth.username'] || '',
         password: dpm['auth.password'] || '',
         apiKey: dpm['header:X-API-Key'] || '',
+        customHeaders,
       };
     }
   }
@@ -178,6 +186,18 @@ export class AssetCreateComponent implements OnChanges {
       properties['auth.password'] = dpm.password!;
     } else if (dpm?.authType === 'apiKey') {
       properties['header:X-API-Key'] = dpm.apiKey!;
+    }
+
+    if (dpm?.customHeaders) {
+      const headers = JSON.parse(`{${dpm.customHeaders}}`) as Record<string, string>;
+
+      Object.entries(headers).forEach(([key, value]) => {
+        if (!key || value == null || value === '') {
+          return;
+        }
+
+        properties[`header:${key}`] = value;
+      });
     }
 
     return properties;

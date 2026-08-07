@@ -50,7 +50,7 @@
     <select name="authType" formControlName="authType">
       <option value="none">No auth</option>
       <option value="basic">Basic auth</option>
-      <option value="apiKey">API key</option>
+      <option value="apiKey">X-API-key</option>
     </select>
   </label>
 
@@ -86,13 +86,13 @@
   }
 
   @if (dataplaneMetadataForm.get('authType')?.value === 'apiKey') {
-    <legend class="fieldset-label">API Key</legend>
+    <legend class="fieldset-label">X-API-Key</legend>
     <label class="input w-full">
       <span class="material-symbols-rounded opacity-50">key</span>
 
       <input
         [type]="showApiKey ? 'text' : 'password'"
-        placeholder="API Key"
+        placeholder="X-API-Key"
         name="apiKey"
         formControlName="apiKey"
       />
@@ -109,4 +109,20 @@
       </button>
     </label>
   }
+
+  <fieldset class="fieldset">
+    <legend class="fieldset-label">Custom Headers</legend>
+
+    <textarea
+      class="textarea textarea-bordered w-full"
+      formControlName="customHeaders"
+      placeholder='"Authorization": "Bearer abc"'>
+    </textarea>
+    @if (dataplaneMetadataForm.get('customHeaders')?.hasError('invalidHeaders')) {
+      <span class="text-error text-sm">
+        Invalid custom headers format. Example:
+        "Authorization": "Bearer token"
+      </span>
+    }
+  </fieldset>
 </fieldset>

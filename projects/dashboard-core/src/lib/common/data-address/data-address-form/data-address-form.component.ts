@@ -28,6 +28,7 @@ export type DataplaneMetadataFormValue = {
   username?: string;
   password?: string;
   apiKey?: string;
+  customHeaders?: string;
 };
 
 @Component({
@@ -61,6 +62,7 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
       username: [''],
       password: [''],
       apiKey: [''],
+      customHeaders: [''],
     });
 
     this.dataplaneMetadataForm
@@ -70,6 +72,13 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
         this.showPassword = false;
         this.showApiKey = false;
         this.updateAuthValidators(authType);
+      });
+
+    this.dataplaneMetadataForm
+      .get('customHeaders')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.validateCustomHeaders();
       });
 
     this.dataplaneMetadataForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
@@ -102,6 +111,30 @@ export class DataAddressFormComponent implements OnChanges, OnDestroy {
     username?.updateValueAndValidity({ emitEvent: false });
     password?.updateValueAndValidity({ emitEvent: false });
     apiKey?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private validateCustomHeaders(): void {
+    const control = this.dataplaneMetadataForm.get('customHeaders');
+
+    if (!control?.value) {
+      control?.setErrors(null);
+      return;
+    }
+
+    try {
+      const headers = JSON.parse(`{${control.value}}`);
+
+      if (
+        typeof headers !== 'object' ||
+        Object.values(headers).some(value => typeof value !== 'string')
+      ) {
+        throw new Error();
+      }
+
+      control.setErrors(null);
+    } catch {
+      control.setErrors({ invalidHeaders: true });
+    }
   }
 
   ngOnDestroy() {
