@@ -55,6 +55,7 @@ export class AssetCreateComponent implements OnChanges {
 
   properties: Record<string, JsonValue> = {};
   privateProperties: Record<string, JsonValue> = {};
+  customHeaders: Record<string, JsonValue> = {};
   dataplaneMetadata?: DataplaneMetadataFormValue;
 
   assetForm: FormGroup;
@@ -85,13 +86,9 @@ export class AssetCreateComponent implements OnChanges {
     this.assetForm.get('contenttype')?.setValue(this.properties['contenttype']);
 
     const dpm = await this.compactDataplaneMetadata();
+    this.customHeaders = {};
     if (dpm) {
-      const customHeaders = Object.entries(dpm)
-        .filter(([key]) => key.startsWith('header:') && key !== 'header:X-API-Key')
-        .map(([key, value]) =>
-          `"${key.substring('header:'.length)}": "${String(value)}"`
-        )
-        .join(',\n');
+      this.customHeaders = this.extractCustomHeaders(dpm);
 
       this.dataplaneMetadata = {
         type: dpm['type'] || 'HttpData',
@@ -102,14 +99,20 @@ export class AssetCreateComponent implements OnChanges {
         username: dpm['auth.username'] || '',
         password: dpm['auth.password'] || '',
         apiKey: dpm['header:X-API-Key'] || '',
-        customHeaders,
       };
     }
   }
 
   createAsset(): void {
     if (this.assetForm.valid) {
-      const assetInput = this.createAssetInput();
+      let assetInput: any;
+
+      try {
+        assetInput = this.createAssetInput();
+      } catch (err) {
+        this.errorMsg = err instanceof Error ? err.message : String(err);
+        return;
+      }
       if (this.mode === 'create') {
         this.assetService
           .createAsset(assetInput)
@@ -134,6 +137,7 @@ export class AssetCreateComponent implements OnChanges {
     const formValue = this.assetForm.getRawValue();
     const dataplaneMetadata = this.createDataplaneMetadataProperties(
       this.assetForm.get('dataplaneMetadata')?.value as DataplaneMetadataFormValue,
+      this.customHeaders,
     );
 
     const asset: any = {
@@ -167,7 +171,10 @@ export class AssetCreateComponent implements OnChanges {
     return asset;
   }
 
-  private createDataplaneMetadataProperties(dpm?: DataplaneMetadataFormValue): Record<string, JsonValue> {
+  private createDataplaneMetadataProperties(
+    dpm?: DataplaneMetadataFormValue,
+    customHeaders: Record<string, JsonValue> = {},
+  ): Record<string, JsonValue> {
     if (!dpm?.url) {
       throw new Error('url is required');
     }
@@ -188,19 +195,31 @@ export class AssetCreateComponent implements OnChanges {
       properties['header:X-API-Key'] = dpm.apiKey!;
     }
 
-    if (dpm?.customHeaders) {
-      const headers = JSON.parse(`{${dpm.customHeaders}}`) as Record<string, string>;
+    Object.entries(customHeaders).forEach(([key, value]) => {
+      if (!key || value == null || value === '') {
+        return;
+      }
 
-      Object.entries(headers).forEach(([key, value]) => {
-        if (!key || value == null || value === '') {
-          return;
-        }
+      if (!this.isValidHeaderName(key)) {
+        throw new Error(`Invalid HTTP header name: ${key}`);
+      }
 
-        properties[`header:${key}`] = value;
-      });
-    }
+      properties[`header:${key}`] = value;
+    });
 
     return properties;
+  }
+
+  private isValidHeaderName(name: string): boolean {
+    return /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(name);
+  }
+
+  private extractCustomHeaders(metadata: Record<string, JsonValue>): Record<string, JsonValue> {
+    return Object.fromEntries(
+      Object.entries(metadata)
+        .filter(([key]) => key.startsWith('header:') && key !== 'header:X-API-Key')
+        .map(([key, value]) => [key.substring('header:'.length), value] as const),
+    );
   }
 
   private async compactDataplaneMetadata(): Promise<Record<string, any> | undefined> {

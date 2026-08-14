@@ -85,6 +85,14 @@
       >
       </lib-json-object-input>
     </fieldset>
+
+    <fieldset class="fieldset w-lg bg-base-200 border border-base-300 p-4 rounded-box">
+      <legend class="fieldset-legend text-sm">Custom Headers</legend>
+      <lib-json-object-input
+        [object]="customHeaders"
+        (objectChange)="customHeaders = $event"
+      ></lib-json-object-input>
+    </fieldset>
   </div>
 
   <div class="2xl:col-span-2 flex flex-col items-center">

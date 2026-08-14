@@ -109,20 +109,4 @@
       </button>
     </label>
   }
-
-  <fieldset class="fieldset">
-    <legend class="fieldset-label">Custom Headers</legend>
-
-    <textarea
-      class="textarea textarea-bordered w-full"
-      formControlName="customHeaders"
-      placeholder='"Authorization": "Bearer abc"'>
-    </textarea>
-    @if (dataplaneMetadataForm.get('customHeaders')?.hasError('invalidHeaders')) {
-      <span class="text-error text-sm">
-        Invalid custom headers format. Example:
-        "Authorization": "Bearer token"
-      </span>
-    }
-  </fieldset>
 </fieldset>
