@@ -44,15 +44,69 @@
     <input type="number" placeholder="TTL" name="ttl" formControlName="ttl" />
   </label>
 
-  <legend class="fieldset-label">Basic Auth Username</legend>
-  <label class="input w-full">
-    <span class="material-symbols-rounded opacity-50">person</span>
-    <input type="text" placeholder="Username" name="username" formControlName="username" />
+  <legend class="fieldset-label">Authentication</legend>
+  <label class="select w-full">
+    <span class="label">Type</span>
+    <select name="authType" formControlName="authType">
+      <option value="none">No auth</option>
+      <option value="basic">Basic auth</option>
+      <option value="apiKey">X-API-key</option>
+    </select>
   </label>
 
-  <legend class="fieldset-label">Basic Auth Password</legend>
-  <label class="input w-full">
-    <span class="material-symbols-rounded opacity-50">password</span>
-    <input type="password" placeholder="Password" name="password" formControlName="password" />
-  </label>
+  @if (dataplaneMetadataForm.get('authType')?.value === 'basic') {
+    <legend class="fieldset-label">Basic Auth Username</legend>
+    <label class="input w-full">
+      <span class="material-symbols-rounded opacity-50">person</span>
+      <input type="text" placeholder="Username" name="username" formControlName="username" />
+    </label>
+
+    <legend class="fieldset-label">Basic Auth Password</legend>
+    <label class="input w-full">
+      <span class="material-symbols-rounded opacity-50">password</span>
+
+      <input
+        [type]="showPassword ? 'text' : 'password'"
+        placeholder="Password"
+        name="password"
+        formControlName="password"
+      />
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        (click)="showPassword = !showPassword"
+        [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+      >
+        <span class="material-symbols-rounded">
+          {{ showPassword ? 'visibility_off' : 'visibility' }}
+        </span>
+      </button>
+    </label>
+  }
+
+  @if (dataplaneMetadataForm.get('authType')?.value === 'apiKey') {
+    <legend class="fieldset-label">X-API-Key</legend>
+    <label class="input w-full">
+      <span class="material-symbols-rounded opacity-50">key</span>
+
+      <input
+        [type]="showApiKey ? 'text' : 'password'"
+        placeholder="X-API-Key"
+        name="apiKey"
+        formControlName="apiKey"
+      />
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        (click)="showApiKey = !showApiKey"
+        [attr.aria-label]="showApiKey ? 'Hide API key' : 'Show API key'"
+      >
+        <span class="material-symbols-rounded">
+          {{ showApiKey ? 'visibility_off' : 'visibility' }}
+        </span>
+      </button>
+    </label>
+  }
 </fieldset>
